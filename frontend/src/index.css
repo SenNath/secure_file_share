@@ -1,6 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
 
 @layer base {
   :root {
@@ -98,4 +102,36 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+/* React Toastify custom styles */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+.Toastify__toast {
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+}
+
+.Toastify__toast--success {
+  background: #10B981;
+}
+
+.Toastify__toast--error {
+  background: #EF4444;
+}
+
+.Toastify__toast--warning {
+  background: #F59E0B;
+}
+
+.Toastify__toast--info {
+  background: #3B82F6;
 }

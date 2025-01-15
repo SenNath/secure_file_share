@@ -1,4 +1,7 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
+
+// @ts-ignore
+import tailwindAnimate from 'tailwindcss-animate';
 
 export default {
   darkMode: ["class"],
@@ -6,7 +9,8 @@ export default {
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx,css}",
   ],
   prefix: "",
   theme: {
@@ -87,5 +91,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimate],
 } satisfies Config;

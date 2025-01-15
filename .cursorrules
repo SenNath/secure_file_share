@@ -109,3 +109,26 @@ backend_testing:
    - Performance verification
    - Monitoring setup
    - Backup procedures
+
+# .cursor debugging rules
+
+1. API Configuration:
+   - Always verify API imports point to the configured interceptor
+   - Check for multiple API instances that might bypass interceptors
+   - Ensure consistent base URL and header handling
+
+2. Authentication Flow:
+   - Trace the complete request flow from component to API
+   - Verify token storage and retrieval
+   - Check header presence in network requests
+
+3. Debugging Process:
+   - Start from the error and work backwards
+   - Compare working vs non-working implementations
+   - Check imports and configurations first
+   - Don't assume shared services use the same instances
+
+4. Code Organization:
+   - Keep API configuration centralized
+   - Use consistent import paths
+   - Document required interceptor usage
