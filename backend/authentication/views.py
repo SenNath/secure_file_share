@@ -116,30 +116,13 @@ class UserLogoutView(APIView):
 
     def post(self, request):
         try:
-            refresh_token = request.data.get('refresh_token')
-            if not refresh_token:
-                logger.warning("Logout attempt without refresh token")
-                return Response(
-                    {'error': 'Refresh token is required'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            try:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
-                logger.info(f"User {request.user.email} logged out successfully")
-                return Response(status=status.HTTP_205_RESET_CONTENT)
-            except (InvalidToken, TokenError) as e:
-                logger.warning(f"Invalid token during logout: {str(e)}")
-                return Response(
-                    {'error': 'Invalid token'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
+            # Clear the refresh token cookie if it exists
+            response = Response({"detail": "Successfully logged out"})
+            response.delete_cookie('refresh_token')
+            return response
         except Exception as e:
-            logger.error(f"Logout error: {str(e)}", exc_info=True)
             return Response(
-                {'error': str(e)},
+                {"error": "Failed to logout"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

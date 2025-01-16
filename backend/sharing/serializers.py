@@ -38,6 +38,7 @@ class FileShareSerializer(serializers.ModelSerializer):
 class ShareLinkSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
     file = FileSerializer(read_only=True)
+    share_url = serializers.SerializerMethodField()
 
     class Meta:
         model = ShareLink
@@ -45,12 +46,18 @@ class ShareLinkSerializer(serializers.ModelSerializer):
             'id', 'file', 'created_by', 'token', 'access_level',
             'created_at', 'expires_at', 'max_uses', 'current_uses',
             'last_used_at', 'password_protected', 'is_revoked',
-            'revoked_at', 'metadata'
+            'revoked_at', 'metadata', 'share_url'
         ]
         read_only_fields = [
             'id', 'token', 'created_at', 'current_uses',
-            'last_used_at', 'is_revoked', 'revoked_at'
+            'last_used_at', 'is_revoked', 'revoked_at', 'share_url'
         ]
+
+    def get_share_url(self, obj):
+        request = self.context.get('request')
+        if request is None:
+            return None
+        return f"{request.scheme}://{request.get_host()}/share/{obj.token}"
 
 class ShareLinkAccessSerializer(serializers.ModelSerializer):
     accessed_by = UserSerializer(read_only=True)

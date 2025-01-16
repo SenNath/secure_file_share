@@ -439,57 +439,28 @@ export const useFiles = (options: UseFilesOptions = {}) => {
     }
   };
 
-  const getSharedFiles = async (): Promise<SharedFile[]> => {
+  const viewFile = useCallback(async (fileId: string) => {
     try {
-      const response = await api.get<SharedFile[]>('/files/shared');
-      return response.data;
-    } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to get shared files'));
-      throw error;
-    }
-  };
-
-  const downloadSharedFile = async (fileId: string): Promise<void> => {
-    try {
-      const response = await api.get<Blob>(`/files/shared/${fileId}/download`, {
+      const response = await api.get<Blob>(`${API_BASE_URL}${fileId}/content/`, {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', ''); // The server will set the filename
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      handleError(error instanceof Error ? error : new Error('Failed to download shared file'));
-      throw error;
+      const url = window.URL.createObjectURL(response.data);
+      return url;
+    } catch (err) {
+      handleError(err as Error);
+      return null;
     }
-  };
+  }, [handleError]);
 
   return {
-    loading,
-    error,
     listFiles,
     getFile,
     uploadFile,
     downloadFile,
     deleteFile,
-    moveFile,
-    copyFile,
-    restoreFile,
-    bulkDelete,
-    bulkMove,
-    bulkCopy,
-    searchFiles,
-    getRecentFiles,
-    getTrash,
-    generateShareLink,
-    getFileVersions,
-    downloadVersion,
-    getSharedFiles,
-    downloadSharedFile,
+    viewFile,
+    loading,
+    error,
   };
 }; 

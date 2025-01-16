@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFiles } from "@/hooks/useFiles";
+import { useSharing, FileShare } from "@/hooks/useSharing";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -9,25 +9,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FileText, Download, Clock, User } from "lucide-react";
+import { FileText, Download, Clock, User, MoreVertical, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-
-interface SharedFile {
-  id: string;
-  name: string;
-  size: number;
-  shared_by: {
-    email: string;
-  };
-  shared_at: string;
-  expires_at: string;
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const FileShared = () => {
   const { toast } = useToast();
-  const [files, setFiles] = useState<SharedFile[]>([]);
-  const { getSharedFiles, downloadSharedFile, loading, error } = useFiles({
+  const [files, setFiles] = useState<FileShare[]>([]);
+  const { getSharedWithMe, downloadSharedFile, viewSharedFile, loading, error } = useSharing({
     onError: (error) => {
       toast({
         title: "Error",
@@ -38,26 +33,65 @@ export const FileShared = () => {
   });
 
   useEffect(() => {
+    let mounted = true;
+    
     const loadSharedFiles = async () => {
       try {
-        const result = await getSharedFiles();
-        setFiles(result);
+        const result = await getSharedWithMe();
+        if (mounted) {
+          setFiles(result || []);
+        }
       } catch (error) {
         console.error("Failed to load shared files:", error);
       }
     };
+    
     loadSharedFiles();
-  }, [getSharedFiles]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const handleDownload = async (fileId: string) => {
+  const handleView = async (share: FileShare) => {
     try {
-      await downloadSharedFile(fileId);
+      const blob = await viewSharedFile(share.id, share.access_level);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to view file:", error);
+      toast({
+        title: "Error",
+        description: "Failed to view file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = async (share: FileShare) => {
+    try {
+      const blob = await downloadSharedFile(share.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', share.file.name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
       toast({
         title: "Success",
         description: "File downloaded successfully",
       });
     } catch (error) {
       console.error("Failed to download file:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download file",
+        variant: "destructive",
+      });
     }
   };
 
@@ -95,49 +129,67 @@ export const FileShared = () => {
               <TableHead>Shared By</TableHead>
               <TableHead>Shared</TableHead>
               <TableHead>Expires</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {files.map((file) => (
-              <TableRow key={file.id}>
+            {files.map((share) => (
+              <TableRow key={share.id}>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <FileText className="h-4 w-4 text-gray-400" />
-                    <span>{file.name}</span>
+                    <span>{share.file.name}</span>
                   </div>
                 </TableCell>
-                <TableCell>{formatBytes(file.size)}</TableCell>
+                <TableCell>{formatBytes(share.file.size)}</TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-gray-400" />
-                    <span>{file.shared_by.email}</span>
+                    <span>{share.shared_by.email}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4 text-gray-400" />
                     <span>
-                      {formatDistanceToNow(new Date(file.shared_at), {
+                      {formatDistanceToNow(new Date(share.created_at), {
                         addSuffix: true,
                       })}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {formatDistanceToNow(new Date(file.expires_at), {
-                    addSuffix: true,
-                  })}
+                  {share.expires_at
+                    ? formatDistanceToNow(new Date(share.expires_at), {
+                        addSuffix: true,
+                      })
+                    : "Never"}
                 </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDownload(file.id)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleView(share)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
+                      {share.access_level === 'FULL' && (
+                        <DropdownMenuItem
+                          onClick={() => handleDownload(share)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

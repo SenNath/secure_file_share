@@ -3,7 +3,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     EnableMFAView, DisableMFAView, VerifyMFAView,
     SendVerificationEmailView, VerifyEmailView,
-    UserLoginView, UserRegistrationView, UserProfileView
+    UserLoginView, UserRegistrationView, UserProfileView,
+    UserLogoutView
 )
 
 urlpatterns = [
@@ -16,4 +17,5 @@ urlpatterns = [
     path('email/send-verification/', SendVerificationEmailView.as_view(), name='send-verification-email'),
     path('email/verify/', VerifyEmailView.as_view(), name='verify-email'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
+    path('logout/', UserLogoutView.as_view(), name='logout'),
 ] 

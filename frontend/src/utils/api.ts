@@ -50,8 +50,10 @@ api.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        const response = await api.post<AuthResponse>('/api/auth/refresh/', {
-          refresh_token: refreshToken
+        const response = await axios.post<AuthResponse>('/api/auth/refresh/', {
+          refresh: refreshToken
+        }, {
+          baseURL: import.meta.env.VITE_API_URL || '/api'
         });
 
         store.dispatch(refreshTokenSuccess(response.data));

@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, MoreVertical, Download, Trash, Share2, Link as LinkIcon } from "lucide-react";
+import { FileText, MoreVertical, Download, Trash, Share2, Link as LinkIcon, Eye } from "lucide-react";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { FileShareDialog } from "./FileShare";
@@ -36,7 +36,8 @@ export const FileList = ({ files: propFiles, showUploadButton = true }: FileList
     downloadFile,
     deleteFile,
     loading,
-    error
+    error,
+    viewFile
   } = useFiles({
     onError: (error) => {
       toast({
@@ -128,6 +129,19 @@ export const FileList = ({ files: propFiles, showUploadButton = true }: FileList
     setShareLinkDialogOpen(true);
   };
 
+  const handleView = async (fileId: string) => {
+    const url = await viewFile(fileId);
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      toast({
+        title: "Error",
+        description: "Could not view file. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleShareSubmit = async (data: Parameters<typeof shareFile>[1]) => {
     if (!selectedFileId) return;
     
@@ -141,17 +155,16 @@ export const FileList = ({ files: propFiles, showUploadButton = true }: FileList
   };
 
   const handleShareLinkSubmit = async (data: Parameters<typeof createShareLink>[1]) => {
-    if (!selectedFileId) return;
+    if (!selectedFileId) return null;
     
     const result = await createShareLink(selectedFileId, data);
     if (result) {
-      // Copy link to clipboard
-      navigator.clipboard.writeText(result.share_link);
       toast({
         title: "Success",
-        description: "Share link created and copied to clipboard",
+        description: "Share link created successfully",
       });
     }
+    return result;
   };
 
   if (loading && !propFiles) {
@@ -201,6 +214,10 @@ export const FileList = ({ files: propFiles, showUploadButton = true }: FileList
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleView(file.id)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDownload(file.id)}>
                         <Download className="mr-2 h-4 w-4" />
                         Download

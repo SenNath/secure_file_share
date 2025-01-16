@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { UserManagement } from './components/admin/UserManagement';
+import { SharedFileView } from '@/components/files/SharedFileView';
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => {
           <Route path="/" element={<Index />} />
           <Route path="/login/*" element={<Login />} />
           <Route path="/register/*" element={<Register />} />
+          <Route path="/share/:token" element={<SharedFileView />} />
           <Route path="/dashboard/*" element={
             <ProtectedRoute>
               <Dashboard />

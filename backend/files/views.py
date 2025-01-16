@@ -20,10 +20,13 @@ from .serializers import (
 from .utils import (
     encrypt_file, decrypt_file, calculate_file_hash,
     get_file_size, ensure_directory_exists, clean_filename,
-    get_mime_type, is_valid_file_type, generate_encryption_key
+    get_mime_type, is_valid_file_type, generate_encryption_key,
+    generate_iv
 )
 import uuid
-from base64 import b64encode, b64decode
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
+from django.contrib.auth import get_user_model
 
 class FileListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -91,6 +94,12 @@ class FileContentView(APIView):
                 content_type=file.mime_type
             )
             response['Content-Disposition'] = f'inline; filename="{file.original_name}"'
+            
+            # Add security headers
+            response['Content-Security-Policy'] = "default-src 'self'"
+            response['X-Content-Type-Options'] = 'nosniff'
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
 
             # Update last accessed time
             file.last_accessed_at = timezone.now()
@@ -211,9 +220,9 @@ class InitializeUploadView(APIView):
                 'original_name': name,
                 'mime_type': mime_type,
                 'size': request.data.get('size', 0),
-                'encryption_key': b64encode(encryption_key).decode('utf-8'),  # Use base64 encoding
+                'encryption_key': encryption_key,  # Already base64 encoded from generate_encryption_key()
                 'encrypted_path': encrypted_path,
-                'iv': b64encode(os.urandom(16)).decode('utf-8'),  # Use base64 for IV too
+                'iv': generate_iv(),  # New utility function to generate and encode IV
                 'status': File.Status.UPLOADING,
                 'description': request.data.get('description', ''),
                 'tags': request.data.get('tags', []),
@@ -237,7 +246,7 @@ class InitializeUploadView(APIView):
         except Exception as e:
             print("Error in InitializeUploadView:", str(e))
             import traceback
-            traceback.print_exc()  # Print full traceback for debugging
+            traceback.print_exc()
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -339,7 +348,7 @@ class CompleteUploadView(APIView):
                 # Encrypt the complete file
                 encrypted_data, iv = encrypt_file(
                     temp_file.name,
-                    file.encryption_key  # Pass the key directly, encrypt_file will handle base64 decoding
+                    file.encryption_key  # Pass the key directly, encrypt_file handles base64 decoding
                 )
 
             # Save encrypted file
@@ -352,7 +361,7 @@ class CompleteUploadView(APIView):
             file.upload_completed_at = timezone.now()
             file.size = file_size
             file.checksum = file_hash
-            file.iv = b64encode(iv).decode('utf-8')  # Encode the new IV as base64
+            file.iv = iv  # IV is already base64 encoded by encrypt_file
             file.save()
 
             # Clean up chunks
@@ -421,14 +430,14 @@ class FileCopyView(APIView):
             # Generate new encryption key for the copy
             encryption_key = generate_encryption_key()
             
-            # Create new file record with base64-encoded values
+            # Create new file record
             new_file = File.objects.create(
                 owner=request.user,
                 name=f"Copy of {source_file.name}",
                 original_name=source_file.original_name,
                 mime_type=source_file.mime_type,
                 size=source_file.size,
-                encryption_key=b64encode(encryption_key).decode('utf-8'),
+                encryption_key=encryption_key,  # Already base64 encoded from generate_encryption_key()
                 status=File.Status.PROCESSING,
                 description=source_file.description,
                 tags=source_file.tags.copy(),
@@ -455,7 +464,7 @@ class FileCopyView(APIView):
                 # Re-encrypt with new key
                 encrypted_data, iv = encrypt_file(
                     temp_file.name,
-                    b64decode(new_file.encryption_key.encode('utf-8'))
+                    new_file.encryption_key  # Pass key directly, encrypt_file handles base64 decoding
                 )
 
             # Save new encrypted file
@@ -463,9 +472,9 @@ class FileCopyView(APIView):
             ensure_directory_exists(new_file_path)
             default_storage.save(new_file_path, ContentFile(encrypted_data))
 
-            # Update new file record with base64-encoded IV
+            # Update new file record
             new_file.status = File.Status.COMPLETED
-            new_file.iv = b64encode(iv).decode('utf-8')
+            new_file.iv = iv  # IV is already base64 encoded by encrypt_file
             new_file.checksum = calculate_file_hash(temp_file.name)
             new_file.upload_completed_at = timezone.now()
             new_file.save()
@@ -584,7 +593,7 @@ class BulkCopyView(APIView):
                     original_name=source_file.original_name,
                     mime_type=source_file.mime_type,
                     size=source_file.size,
-                    encryption_key=b64encode(encryption_key).decode('utf-8'),
+                    encryption_key=encryption_key,  # Already base64 encoded from generate_encryption_key()
                     status=File.Status.PROCESSING,
                     description=source_file.description,
                     tags=source_file.tags.copy(),
@@ -609,7 +618,7 @@ class BulkCopyView(APIView):
 
                     encrypted_data, iv = encrypt_file(
                         temp_file.name,
-                        b64decode(new_file.encryption_key.encode('utf-8'))
+                        new_file.encryption_key  # Pass key directly, encrypt_file handles base64 decoding
                     )
 
                 # Save new encrypted file
@@ -619,7 +628,7 @@ class BulkCopyView(APIView):
 
                 # Update new file record
                 new_file.status = File.Status.COMPLETED
-                new_file.iv = b64encode(iv).decode('utf-8')
+                new_file.iv = iv  # IV is already base64 encoded by encrypt_file
                 new_file.checksum = calculate_file_hash(temp_file.name)
                 new_file.upload_completed_at = timezone.now()
                 new_file.save()

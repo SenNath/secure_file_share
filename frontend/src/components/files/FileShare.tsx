@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addDays } from "date-fns";
 import { ShareData } from "@/hooks/useSharing";
 
 interface FileShareDialogProps {
@@ -16,22 +15,18 @@ interface FileShareDialogProps {
 export const FileShareDialog = ({ isOpen, onClose, onShare }: FileShareDialogProps) => {
   const [email, setEmail] = useState("");
   const [accessLevel, setAccessLevel] = useState<ShareData["access_level"]>("VIEW");
-  const [expiresIn, setExpiresIn] = useState("7"); // days
   const [notes, setNotes] = useState("");
 
   const handleShare = async () => {
-    const expiresAt = expiresIn ? addDays(new Date(), parseInt(expiresIn)).toISOString() : undefined;
     await onShare({
       shared_with_email: email,
       access_level: accessLevel,
-      expires_at: expiresAt,
       notes: notes || undefined,
     });
     onClose();
     // Reset form
     setEmail("");
     setAccessLevel("VIEW");
-    setExpiresIn("7");
     setNotes("");
   };
 
@@ -62,21 +57,10 @@ export const FileShareDialog = ({ isOpen, onClose, onShare }: FileShareDialogPro
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="VIEW">View Only</SelectItem>
-                <SelectItem value="EDIT">Edit</SelectItem>
-                <SelectItem value="FULL">Full Access</SelectItem>
+                <SelectItem value="VIEW">View Only (No Download)</SelectItem>
+                <SelectItem value="FULL">Full Access (View, Download & Edit)</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="expires">Expires In (Days)</Label>
-            <Input
-              id="expires"
-              type="number"
-              min="1"
-              value={expiresIn}
-              onChange={(e) => setExpiresIn(e.target.value)}
-            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>

@@ -4,6 +4,14 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+def format_file_size(size_in_bytes):
+    """Convert size in bytes to human readable format"""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_in_bytes < 1024.0:
+            return f"{size_in_bytes:.2f} {unit}"
+        size_in_bytes /= 1024.0
+    return f"{size_in_bytes:.2f} PB"
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -51,12 +59,13 @@ class FileInitializeSerializer(serializers.ModelSerializer):
 class FileSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
     latest_version = serializers.SerializerMethodField()
+    formatted_size = serializers.SerializerMethodField()
     
     class Meta:
         model = File
         fields = [
             'id', 'owner', 'name', 'original_name',
-            'mime_type', 'size', 'checksum', 'status',
+            'mime_type', 'size', 'formatted_size', 'checksum', 'status',
             'upload_started_at', 'upload_completed_at',
             'last_accessed_at', 'is_deleted', 'deleted_at',
             'description', 'tags', 'metadata', 'latest_version'
@@ -73,12 +82,15 @@ class FileSerializer(serializers.ModelSerializer):
         if latest_version:
             return FileVersionSerializer(latest_version).data
         return None
+        
+    def get_formatted_size(self, obj):
+        return format_file_size(obj.size)
 
 class FileListSerializer(FileSerializer):
     """Simplified serializer for list views"""
     class Meta(FileSerializer.Meta):
         fields = [
             'id', 'name', 'mime_type', 'size',
-            'status', 'upload_completed_at',
+            'formatted_size', 'status', 'upload_completed_at',
             'last_accessed_at', 'is_deleted'
         ] 

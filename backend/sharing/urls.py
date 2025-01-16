@@ -2,26 +2,27 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # File Sharing
-    path('files/<uuid:file_id>/share/', views.CreateShareView.as_view(), name='create-share'),
-    path('files/<uuid:file_id>/shares/', views.FileShareListView.as_view(), name='file-shares'),
+    # File sharing endpoints
+    path('files/<uuid:file_id>/shares/', views.CreateShareView.as_view(), name='create-share'),
+    path('files/<uuid:file_id>/shares/list/', views.FileShareListView.as_view(), name='list-shares'),
     path('shares/<uuid:pk>/', views.ShareDetailView.as_view(), name='share-detail'),
-    path('shares/<uuid:pk>/revoke/', views.RevokeShareView.as_view(), name='revoke-share'),
+    path('shares/<uuid:pk>/download/', views.ShareDownloadView.as_view(), name='share-download'),
+    path('shares/<uuid:pk>/view/', views.ShareViewView.as_view(), name='share-view'),
+    path('shares/<uuid:pk>/view-only/', views.ShareViewOnlyView.as_view(), name='share-view-only'),
     
-    # Share Links
-    path('shares/<uuid:share_id>/links/', views.ShareLinkListView.as_view(), name='share-links'),
-    path('links/<uuid:pk>/', views.ShareLinkDetailView.as_view(), name='share-link-detail'),
-    path('links/<uuid:pk>/revoke/', views.RevokeShareLinkView.as_view(), name='revoke-share-link'),
+    # Share link endpoints
+    path('files/<uuid:file_id>/share-links/', views.ShareLinkListView.as_view(), name='create-share-link'),
+    path('share-links/<uuid:pk>/', views.ShareLinkDetailView.as_view(), name='share-link-detail'),
     
-    # Public Access
+    # Public access endpoints
     path('public/links/<str:token>/', views.PublicShareLinkView.as_view(), name='public-share-link'),
     path('public/links/<str:token>/download/', views.PublicShareDownloadView.as_view(), name='public-share-download'),
+    path('public/links/<str:token>/view/', views.PublicShareViewView.as_view(), name='public-share-view'),
+    path('public/links/<str:token>/view-only/', views.PublicShareViewOnlyView.as_view(), name='public-share-view-only'),
     path('public/links/<str:token>/verify-password/', views.VerifySharePasswordView.as_view(), name='verify-share-password'),
     
-    # Share Management
+    # User shares management
     path('shared-with-me/', views.SharedWithMeView.as_view(), name='shared-with-me'),
     path('my-shares/', views.MySharesView.as_view(), name='my-shares'),
-    
-    # Access Logs
-    path('shares/<uuid:share_id>/access-logs/', views.ShareAccessLogsView.as_view(), name='share-access-logs'),
+    path('shares/<uuid:pk>/access-logs/', views.ShareAccessLogsView.as_view(), name='share-access-logs'),
 ] 

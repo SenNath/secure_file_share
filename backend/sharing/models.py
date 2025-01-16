@@ -7,8 +7,7 @@ from files.models import File
 
 class FileShare(models.Model):
     class AccessLevel(models.TextChoices):
-        VIEW = 'VIEW', _('View')
-        EDIT = 'EDIT', _('Edit')
+        VIEW = 'VIEW', _('View Only')
         FULL = 'FULL', _('Full Access')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

@@ -23,7 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/files/', include('files.urls')),
-    path('api/shares/', include('sharing.urls')),
+    path('api/sharing/', include('sharing.urls')),
 ]
 
 if settings.DEBUG:

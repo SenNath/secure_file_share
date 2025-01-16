@@ -82,12 +82,18 @@ def generate_file_path(instance, filename):
 
 def generate_encryption_key():
     """Generate a new encryption key."""
-    return Fernet.generate_key()
+    # Generate a 32-byte (256-bit) random key for AES-256
+    key = os.urandom(32)
+    # Return base64 encoded key
+    return b64encode(key).decode('utf-8')
 
 def derive_key(key, salt):
     """Derive an encryption key using PBKDF2."""
     if isinstance(key, str):
-        key = key.encode('utf-8')
+        try:
+            key = b64decode(key)
+        except Exception:
+            key = key.encode('utf-8')
     
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -104,9 +110,9 @@ def encrypt_file(file_path, key):
     """
     iv = os.urandom(16)
     
-    # If key is already bytes, use it directly
+    # Decode base64 key if needed
     if isinstance(key, str):
-        key = key.encode('utf-8')
+        key = b64decode(key)
     
     derived_key = derive_key(key, iv)
     
@@ -121,7 +127,7 @@ def encrypt_file(file_path, key):
     padded_data = padder.update(data) + padder.finalize()
     encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
     
-    return encrypted_data, iv
+    return encrypted_data, b64encode(iv).decode('utf-8')
 
 def decrypt_file(encrypted_data, key, iv):
     """
@@ -131,23 +137,42 @@ def decrypt_file(encrypted_data, key, iv):
     try:
         # Handle base64 decoding for key and iv if they're strings
         if isinstance(key, str):
-            key = b64decode(key)
+            try:
+                key = b64decode(key)
+            except Exception as e:
+                raise ValueError("Invalid encryption key format")
+                
         if isinstance(iv, str):
-            iv = b64decode(iv)
+            try:
+                iv = b64decode(iv)
+            except Exception as e:
+                raise ValueError("Invalid IV format")
         
+        if len(iv) != 16:
+            raise ValueError(f"Invalid IV length: {len(iv)}, expected 16 bytes")
+            
         derived_key = derive_key(key, iv)
+        if len(derived_key) != 32:  # AES-256 requires 32-byte key
+            raise ValueError(f"Invalid derived key length: {len(derived_key)}, expected 32 bytes")
         
         cipher = Cipher(algorithms.AES(derived_key), modes.CBC(iv))
         decryptor = cipher.decryptor()
         
-        unpadder = padding.PKCS7(128).unpadder()
+        # First decrypt the data
+        try:
+            decrypted_padded = decryptor.update(encrypted_data) + decryptor.finalize()
+        except Exception as e:
+            raise ValueError("Decryption failed - invalid key or corrupted data")
         
-        decrypted_padded = decryptor.update(encrypted_data) + decryptor.finalize()
-        decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
-        
-        return decrypted
+        # Then remove padding
+        try:
+            unpadder = padding.PKCS7(128).unpadder()
+            decrypted = unpadder.update(decrypted_padded) + unpadder.finalize()
+            return decrypted
+        except Exception as e:
+            raise ValueError("Invalid padding - decryption failed")
+            
     except Exception as e:
-        print(f"Decryption error: {str(e)}")
         import traceback
         traceback.print_exc()
         raise
@@ -199,3 +224,8 @@ def is_valid_file_type(mime_type):
         'application/x-7z-compressed'
     ]
     return mime_type in ALLOWED_MIME_TYPES 
+
+def generate_iv():
+    """Generate a new initialization vector (IV) and return it base64 encoded."""
+    iv = os.urandom(16)  # Generate 16 bytes (128 bits) for AES
+    return b64encode(iv).decode('utf-8') 

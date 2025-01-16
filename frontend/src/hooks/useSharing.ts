@@ -6,13 +6,12 @@ const API_BASE_URL = '/api/sharing/';
 
 export interface ShareData {
   shared_with_email: string;
-  access_level: 'VIEW' | 'EDIT' | 'FULL';
-  expires_at?: string;
+  access_level: 'VIEW' | 'FULL';
   notes?: string;
 }
 
 export interface ShareLinkData {
-  access_level: 'VIEW' | 'EDIT' | 'FULL';
+  access_level: 'VIEW' | 'FULL';
   expires_at: string;
   max_uses?: number;
   password?: string;
@@ -69,7 +68,7 @@ export const useSharing = (options: UseSharingOptions = {}) => {
   const shareFile = useCallback(async (fileId: string, shareData: ShareData) => {
     try {
       setLoading(true);
-      const response = await api.post<FileShare>(`${API_BASE_URL}files/${fileId}/share/`, shareData);
+      const response = await api.post<FileShare>(`${API_BASE_URL}files/${fileId}/shares/`, shareData);
       return response.data;
     } catch (err) {
       handleError(err as Error);
@@ -82,7 +81,7 @@ export const useSharing = (options: UseSharingOptions = {}) => {
   const createShareLink = useCallback(async (fileId: string, linkData: ShareLinkData) => {
     try {
       setLoading(true);
-      const response = await api.post<ShareLink>(`${API_BASE_URL}files/${fileId}/share-link/`, linkData);
+      const response = await api.post<ShareLink>(`${API_BASE_URL}files/${fileId}/share-links/`, linkData);
       return response.data;
     } catch (err) {
       handleError(err as Error);
@@ -147,11 +146,45 @@ export const useSharing = (options: UseSharingOptions = {}) => {
   const getSharedWithMe = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get<FileShare[]>(`${API_BASE_URL}shared-with-me/`);
-      return response.data;
+      const response = await api.get<{ results: FileShare[] }>(`${API_BASE_URL}shared-with-me/`);
+      return response.data.results || [];
     } catch (err) {
       handleError(err as Error);
       return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [handleError]);
+
+  const downloadSharedFile = useCallback(async (shareId: string) => {
+    try {
+      setLoading(true);
+      const response = await api.get<Blob>(`${API_BASE_URL}shares/${shareId}/download/`, {
+        responseType: 'blob'
+      });
+      
+      return response.data;
+    } catch (err) {
+      handleError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [handleError]);
+
+  const viewSharedFile = useCallback(async (shareId: string, accessLevel: string) => {
+    try {
+      setLoading(true);
+      const endpoint = accessLevel === 'VIEW'
+        ? `${API_BASE_URL}shares/${shareId}/view-only/`
+        : `${API_BASE_URL}shares/${shareId}/view/`;
+      const response = await api.get<Blob>(endpoint, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (err) {
+      handleError(err as Error);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -178,6 +211,8 @@ export const useSharing = (options: UseSharingOptions = {}) => {
     revokeShare,
     revokeShareLink,
     getSharedWithMe,
+    downloadSharedFile,
+    viewSharedFile,
     getMyShares,
     loading,
     error,
