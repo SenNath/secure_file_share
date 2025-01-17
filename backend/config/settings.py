@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,9 +22,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-for-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# ALLOWED_HOSTS configuration
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured('ALLOWED_HOSTS must be set when DEBUG is False')
+
+# Ensure empty strings are removed
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 # Application definition
 INSTALLED_APPS = [
