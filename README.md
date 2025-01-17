@@ -31,76 +31,61 @@ A secure file sharing application built with React and Django, featuring end-to-
 
 ## Prerequisites
 
-- Python 3.9+
-- Node.js 16+
-- Redis Server
-- SQLite (for development)
+- Docker
+- Docker Compose
 
-## Setup Instructions
+## Quick Start
 
-### Clone the Repository
+1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd secure_file_share
+cd secure-file-share
 ```
 
-### Set up the backend:
-   ```bash
-   # Create and activate virtual environment
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   
-   # Install dependencies
-   pip install -r requirements.txt
-   
-   # Set up environment variables
-   cp .env.example .env
-   
-### Generate SSL certificates
-    ```bash
-    cd scripts
-    chmod +x generate_cert.sh
-    ./generate_cert.sh
-    cd ..
-    ```
-
-### Apply migrations
+2. Start the application:
 ```bash
-python manage.py migrate
+docker-compose up --build
 ```
 
-### Create superuser
+3. Setup superuser:
+During the first build, you'll be prompted to create a superuser interactively if one doesn't exist.
+The system will check for an existing superuser and:
+- If no superuser exists: You'll be prompted to create one
+- If superuser already exists: Creation will be skipped
+
+To create additional superusers later, if needed:
 ```bash
-python manage.py createsuperuser
+docker-compose exec backend python manage.py createsuperuser
 ```
 
-3. Set up the frontend:
-   ```bash
-   cd frontend
-   npm install
-   cp .env.example .env
-   ```
+The application will be available at:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
 
-## Running the Application
+## Environment Variables
+
+The application uses the following environment variables, which are pre-configured in the docker-compose.yml:
+
+### Backend
+- DJANGO_SECRET_KEY: Secret key for Django
+- DJANGO_DEBUG: Debug mode (True/False)
+- DJANGO_ALLOWED_HOSTS: Allowed hosts for Django
+- DATABASE_URL: PostgreSQL database URL
+- REDIS_URL: Redis URL for Celery
+- CELERY_BROKER_URL: Celery broker URL
+- CORS_ALLOWED_ORIGINS: CORS allowed origins
 
 
-## Running the Application
+### Frontend
+- REACT_APP_API_URL: Backend API URL
 
-### 1. Start Backend Server
+## Development
+
+To run the application in development mode:
+
+1. Start the services:
 ```bash
-cd backend
-python manage.py runsslserver --certificate certificates/server.crt --key certificates/server.key
-```
-
-### 2. Start Frontend Development Server
-In a new terminal:
-```bash
-cd frontend
-npm run dev
-```
-### 4. Start Redis Server
-```bash
-redis-server
+docker-compose up
 ```
 
 The application will be available at:
@@ -128,17 +113,13 @@ The application will be available at:
 
 ### Backend Tests
 ```bash
-cd backend
-python manage.py test
+docker-compose exec backend python manage.py test
 ```
 
 ### Frontend Tests
 ```bash
-cd frontend
-npm test
+docker-compose exec frontend npm test
 ```
-## API Documentation
-API documentation is available at `/api/schema/swagger-ui/` when running the development server.
 
 ## Features
 - End-to-end file encryption
@@ -159,9 +140,6 @@ API documentation is available at `/api/schema/swagger-ui/` when running the dev
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Security
-For security issues, please email [security@yourdomain.com](mailto:security@yourdomain.com)
 
 ## Acknowledgments
 - [Django](https://www.djangoproject.com/)

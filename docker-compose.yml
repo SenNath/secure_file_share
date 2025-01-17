@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=https://localhost:8000
+      - HTTPS=true
+      - SSL_CRT_FILE=certificates/server.crt
+      - SSL_KEY_FILE=certificates/server.key
+      - VITE_FILE_CHUNK_SIZE=5242880
+      - VITE_MAX_FILE_SIZE=104857600
+      - VITE_ENABLE_MFA=true
+      - VITE_ENABLE_FILE_ENCRYPTION=true
+      - VITE_ENCRYPTION_ALGORITHM=AES-GCM
+      - VITE_KEY_LENGTH=256
+      - VITE_IV_LENGTH=12
+      - VITE_AUTH_TOKEN_KEY=auth_token
+      - VITE_REFRESH_TOKEN_KEY=refresh_token
+      - VITE_DEV_MODE=true
+    volumes:
+      - ./certificates:/app/certificates
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-insecure-development-key-change-in-production}
+      - DJANGO_DEBUG=False
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+      - CORS_ALLOWED_ORIGINS=https://localhost:3000
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+      - ./certificates:/app/certificates
+    stdin_open: true
+    tty: true
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config worker -l INFO
+    environment:
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-insecure-development-key-change-in-production}
+      - DJANGO_DEBUG=False
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - backend
+      - redis
+
+volumes:
+  postgres_data: 
