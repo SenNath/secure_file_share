@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSharing, FileShare } from "@/hooks/useSharing";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export const FileShared = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [files, setFiles] = useState<FileShare[]>([]);
   const { getSharedWithMe, downloadSharedFile, viewSharedFile, loading, error } = useSharing({
@@ -31,6 +33,8 @@ export const FileShared = () => {
       });
     },
   });
+
+  const isGuest = user?.role_name === 'GUEST';
 
   useEffect(() => {
     let mounted = true;
@@ -166,30 +170,42 @@ export const FileShared = () => {
                     : "Never"}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleView(share)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </DropdownMenuItem>
-                      {share.access_level === 'FULL' && (
+                  {isGuest ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleView(share)}
+                      className="h-8 px-2"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleDownload(share)}
+                          onClick={() => handleView(share)}
                         >
-                          <Download className="mr-2 h-4 w-4" />
-                          Download
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
                         </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        {share.access_level === 'FULL' && (
+                          <DropdownMenuItem
+                            onClick={() => handleDownload(share)}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

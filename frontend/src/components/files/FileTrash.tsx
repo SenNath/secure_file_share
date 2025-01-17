@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useFiles } from "@/hooks/useFiles";
+import { useFiles, FileMetadata } from "@/hooks/useFiles";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -15,8 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 
 export const FileTrash = () => {
   const { toast } = useToast();
-  const [files, setFiles] = useState<any[]>([]);
-  const { getTrash, restoreFile, deleteFile, loading, error } = useFiles({
+  const [files, setFiles] = useState<FileMetadata[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { getTrash, restoreFile, deleteFile } = useFiles({
     onError: (error) => {
       toast({
         title: "Error",
@@ -27,49 +28,87 @@ export const FileTrash = () => {
   });
 
   useEffect(() => {
+    let mounted = true;
+
     const loadTrash = async () => {
       try {
+        setIsLoading(true);
         const result = await getTrash();
-        setFiles(result);
+        if (mounted) {
+          setFiles(result || []);
+        }
       } catch (error) {
         console.error("Failed to load trash:", error);
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to load trash",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
+
     loadTrash();
-  }, [getTrash]);
+
+    return () => {
+      mounted = false;
+    };
+  }, []); // Only run on mount
 
   const handleRestore = async (fileId: string) => {
     try {
-      await restoreFile(fileId);
-      setFiles(files.filter(f => f.id !== fileId));
-      toast({
-        title: "Success",
-        description: "File restored successfully",
-      });
+      const success = await restoreFile(fileId);
+      if (success) {
+        setFiles(files.filter(f => f.id !== fileId));
+        toast({
+          title: "Success",
+          description: "File restored successfully",
+        });
+      }
     } catch (error) {
       console.error("Failed to restore file:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore file",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDelete = async (fileId: string) => {
     try {
-      await deleteFile(fileId);
-      setFiles(files.filter(f => f.id !== fileId));
-      toast({
-        title: "Success",
-        description: "File permanently deleted",
-      });
+      const success = await deleteFile(fileId);
+      if (success) {
+        setFiles(files.filter(f => f.id !== fileId));
+        toast({
+          title: "Success",
+          description: "File permanently deleted",
+        });
+      }
     } catch (error) {
       console.error("Failed to delete file:", error);
+      toast({
+        title: "Error",
+        description: "Failed to permanently delete file",
+        variant: "destructive",
+      });
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4">Loading trash...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -102,6 +141,7 @@ export const FileTrash = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Size</TableHead>
               <TableHead>Deleted</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -115,10 +155,13 @@ export const FileTrash = () => {
                     <span>{file.name}</span>
                   </div>
                 </TableCell>
+                <TableCell>{file.formatted_size}</TableCell>
                 <TableCell>
-                  {formatDistanceToNow(new Date(file.deleted_at), {
-                    addSuffix: true,
-                  })}
+                  {file.deleted_at
+                    ? formatDistanceToNow(new Date(file.deleted_at), {
+                        addSuffix: true,
+                      })
+                    : 'Unknown'}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">

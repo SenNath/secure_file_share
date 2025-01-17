@@ -11,6 +11,7 @@ export interface FileMetadata {
   original_name: string;
   mime_type: string;
   size: number;
+  formatted_size: string;
   checksum: string;
   status: 'PENDING' | 'UPLOADING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   upload_started_at: string;
@@ -21,6 +22,20 @@ export interface FileMetadata {
   description: string;
   tags: string[];
   metadata: Record<string, any>;
+  modified_at: string | null;
+  owner?: {
+    id: string;
+    email: string;
+  };
+  shares?: Array<{
+    id: string;
+    shared_with: {
+      id: string;
+      email: string;
+    };
+    access_level: string;
+    created_at: string;
+  }>;
   latest_version?: {
     id: string;
     version_number: number;
@@ -294,13 +309,11 @@ export const useFiles = (options: UseFilesOptions = {}) => {
   const restoreFile = useCallback(async (fileId: string) => {
     try {
       setLoading(true);
-      const response = await api.post<FileMetadata>(
-        `${API_BASE_URL}/${fileId}/restore/`
-      );
-      return response.data;
+      await api.post(`${API_BASE_URL}${fileId}/restore/`);
+      return true;
     } catch (err) {
       handleError(err as Error);
-      return null;
+      return false;
     } finally {
       setLoading(false);
     }
@@ -389,8 +402,8 @@ export const useFiles = (options: UseFilesOptions = {}) => {
   const getTrash = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get<FileMetadata[]>(`${API_BASE_URL}/trash/`);
-      return response.data;
+      const response = await api.get<{ results: FileMetadata[] }>(`${API_BASE_URL}trash/`);
+      return response.data.results || [];
     } catch (err) {
       handleError(err as Error);
       return [];
@@ -455,11 +468,13 @@ export const useFiles = (options: UseFilesOptions = {}) => {
 
   return {
     listFiles,
+    viewFile,
     getFile,
     uploadFile,
     downloadFile,
     deleteFile,
-    viewFile,
+    getTrash,
+    restoreFile,
     loading,
     error,
   };

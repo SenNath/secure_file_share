@@ -27,6 +27,31 @@ import uuid
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import get_user_model
+from functools import wraps
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(view_instance, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.role or request.user.role.name != 'ADMIN':
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        return view_func(view_instance, request, *args, **kwargs)
+    return _wrapped_view
+
+class AdminFileListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FileListSerializer
+
+    @admin_required
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return File.objects.filter(
+            is_deleted=False,
+            status=File.Status.COMPLETED
+        ).select_related('owner').order_by('-upload_completed_at')
 
 class FileListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
@@ -52,6 +77,9 @@ class FileDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = FileSerializer
 
     def get_queryset(self):
+        # Check if admin access is requested
+        if self.request.query_params.get('admin_access') == 'true' and self.request.user.role and self.request.user.role.name == 'ADMIN':
+            return File.objects.all()
         return File.objects.filter(owner=self.request.user)
 
     def perform_destroy(self, instance):
@@ -63,7 +91,11 @@ class FileContentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        file = get_object_or_404(File, pk=pk, owner=request.user)
+        # Check if admin access is requested
+        if request.query_params.get('admin_access') == 'true' and request.user.role and request.user.role.name == 'ADMIN':
+            file = get_object_or_404(File, pk=pk)
+        else:
+            file = get_object_or_404(File, pk=pk, owner=request.user)
         
         try:
             file_path = file.get_file_path()
@@ -110,9 +142,6 @@ class FileContentView(APIView):
             return response
 
         except Exception as e:
-            print("Error in FileContentView:", str(e))
-            import traceback
-            traceback.print_exc()
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -122,8 +151,12 @@ class FileDownloadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        file = get_object_or_404(File, pk=pk, owner=request.user)
-        
+        # Check if admin access is requested
+        if request.query_params.get('admin_access') == 'true' and request.user.role and request.user.role.name == 'ADMIN':
+            file = get_object_or_404(File, pk=pk)
+        else:
+            file = get_object_or_404(File, pk=pk, owner=request.user)
+
         try:
             file_path = file.get_file_path()
             if not default_storage.exists(file_path):
@@ -143,20 +176,32 @@ class FileDownloadView(APIView):
                 file.iv
             )
 
-            # Create response with decrypted data
-            response = HttpResponse(decrypted_data, content_type=file.mime_type)
+            # Create temporary file for serving
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file.write(decrypted_data)
+                temp_file.flush()
+
+            response = FileResponse(
+                open(temp_file.name, 'rb'),
+                content_type=file.mime_type
+            )
             response['Content-Disposition'] = f'attachment; filename="{file.original_name}"'
+            
+            # Add security headers
+            response['Content-Security-Policy'] = "default-src 'self'"
+            response['X-Content-Type-Options'] = 'nosniff'
+            response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
 
             # Update last accessed time
             file.last_accessed_at = timezone.now()
             file.save()
 
+            # Clean up temp file after response is sent
+            os.unlink(temp_file.name)
             return response
 
         except Exception as e:
-            print("Error in FileDownloadView:", str(e))
-            import traceback
-            traceback.print_exc()
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -692,4 +737,4 @@ class TrashView(generics.ListAPIView):
         return File.objects.filter(
             owner=self.request.user,
             is_deleted=True
-        )
+        ).select_related('owner').order_by('-deleted_at')
