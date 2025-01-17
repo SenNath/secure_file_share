@@ -11,8 +11,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -32,10 +32,10 @@ services:
       - VITE_DEV_MODE=false
       - NODE_ENV=production
     volumes:
-      - ./certificates:/certificates
+      - ./backend/certificates:/certificates
     depends_on:
-      - backend
-      - certificates
+      certificates:
+        condition: service_completed_successfully
 
   backend:
     build:
@@ -58,8 +58,10 @@ services:
     stdin_open: true
     tty: true
     depends_on:
-      - certificates
-      - redis
+      certificates:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
 
   redis:
     image: redis:6
