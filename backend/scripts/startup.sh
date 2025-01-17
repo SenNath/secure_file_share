@@ -1,16 +1,5 @@
 #!/bin/bash
 
-# Create certificates directory if it doesn't exist
-mkdir -p certificates
-
-# Generate SSL certificates if they don't exist
-if [ ! -f "certificates/server.crt" ] || [ ! -f "certificates/server.key" ]; then
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout certificates/server.key \
-        -out certificates/server.crt \
-        -subj '/CN=localhost'
-fi
-
 # Run migrations
 python manage.py migrate
 

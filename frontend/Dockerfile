@@ -1,5 +1,5 @@
-FROM node:18-alpine
-
+# Build stage
+FROM node:18-alpine as builder
 WORKDIR /app
 
 # Copy package files
@@ -14,8 +14,11 @@ COPY . .
 # Build the app
 RUN npm run build
 
-# Install serve to run the application
+# Production stage
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
 RUN npm install -g serve
-
-# Start the app
-CMD serve -s build -l 3000 
+EXPOSE 3000
+CMD ["serve", "-s", "dist", "-l", "3000"] 

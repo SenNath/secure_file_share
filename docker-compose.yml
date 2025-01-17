@@ -1,6 +1,14 @@
 version: '3.8'
 
 services:
+  certificates:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ./scripts/generate_cert.sh
+    volumes:
+      - ./certificates:/app/certificates
+
   frontend:
     build:
       context: ./frontend
@@ -22,10 +30,12 @@ services:
       - VITE_AUTH_TOKEN_KEY=auth_token
       - VITE_REFRESH_TOKEN_KEY=refresh_token
       - VITE_DEV_MODE=true
+      - NODE_ENV=production
     volumes:
       - ./certificates:/app/certificates
     depends_on:
       - backend
+      - certificates
 
   backend:
     build:
@@ -45,6 +55,9 @@ services:
       - ./certificates:/app/certificates
     stdin_open: true
     tty: true
+    depends_on:
+      - certificates
+      - redis
 
   redis:
     image: redis:6
@@ -63,9 +76,8 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
       - ./backend:/app
+      - ./certificates:/app/certificates
     depends_on:
-      - backend
       - redis
+      - backend
 
-volumes:
-  postgres_data: 
