@@ -18,8 +18,8 @@ services:
     environment:
       - VITE_API_URL=https://localhost:8000
       - HTTPS=true
-      - SSL_CRT_FILE=certificates/server.crt
-      - SSL_KEY_FILE=certificates/server.key
+      - SSL_CRT_FILE=/certificates/server.crt
+      - SSL_KEY_FILE=/certificates/server.key
       - VITE_FILE_CHUNK_SIZE=5242880
       - VITE_MAX_FILE_SIZE=104857600
       - VITE_ENABLE_MFA=true
@@ -29,7 +29,7 @@ services:
       - VITE_IV_LENGTH=12
       - VITE_AUTH_TOKEN_KEY=auth_token
       - VITE_REFRESH_TOKEN_KEY=refresh_token
-      - VITE_DEV_MODE=true
+      - VITE_DEV_MODE=false
       - NODE_ENV=production
     volumes:
       - ./certificates:/certificates

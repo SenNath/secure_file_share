@@ -9,20 +9,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    https: (() => {
-      if (process.env.NODE_ENV === 'development') {
-        const keyPath = "../backend/certificates/server.key";
-        const certPath = "../backend/certificates/server.crt";
-        
-        if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-          return {
-            key: fs.readFileSync(keyPath),
-            cert: fs.readFileSync(certPath)
-          } as ServerOptions['https'];
-        }
-      }
-      return undefined;
-    })(),
+    https: {
+      key: fs.readFileSync("../certificates/server.key"),
+      cert: fs.readFileSync("../certificates/server.crt")
+    } as ServerOptions['https'],
     proxy: {
       '/api': {
         target: 'https://localhost:8000',
