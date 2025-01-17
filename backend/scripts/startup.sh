@@ -5,11 +5,20 @@ python manage.py migrate
 
 # Check if superuser exists and create if it doesn't
 echo "Checking for existing superuser..."
-if ! python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); exit(User.objects.filter(is_superuser=True).exists())"; then
-    echo "No superuser found. Creating superuser..."
+python manage.py shell << EOF
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(is_superuser=True).exists():
+    print("No superuser found.")
+    exit(1)
+else:
+    print("Superuser already exists.")
+    exit(0)
+EOF
+
+if [ $? -eq 1 ]; then
+    echo "Creating superuser through interactive prompt..."
     python manage.py createsuperuser
-else
-    echo "Superuser already exists. Skipping creation."
 fi
 
 # Start server with SSL
