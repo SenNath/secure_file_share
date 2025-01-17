@@ -53,7 +53,8 @@ The application automatically creates a default admin user with the following cr
 Email: admin@test.com
 Password: admin123
 ```
-You can use these credentials to log in to the admin interface at https://localhost:8000/admin
+
+Note: When you register as a new user from the frontend, the role will be set to "Regular" by default. Only the default admin user will have the "Admin" role and can change the role of other registered users to either "Admin" or "Regular" or "Guest".
 
 
 
