@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     command: ./scripts/generate_cert.sh
     volumes:
-      - ./certificates:/app/certificates
+      - ./certificates:/certificates
 
   frontend:
     build:
@@ -32,7 +32,7 @@ services:
       - VITE_DEV_MODE=true
       - NODE_ENV=production
     volumes:
-      - ./certificates:/app/certificates
+      - ./certificates:/certificates
     depends_on:
       - backend
       - certificates
@@ -51,8 +51,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
-      - ./backend:/app
-      - ./certificates:/app/certificates
+      - ./backend:/backend
+      - ./certificates:/certificates
     stdin_open: true
     tty: true
     depends_on:
@@ -75,8 +75,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
-      - ./backend:/app
-      - ./certificates:/app/certificates
+      - ./backend:/backend
+      - ./certificates:/certificates
     depends_on:
       - redis
       - backend
