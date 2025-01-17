@@ -47,20 +47,20 @@ cd secure-file-share
 docker-compose up --build
 ```
 
-3. Setup superuser:
-During the first build, you'll be prompted to create a superuser interactively if one doesn't exist.
-The system will check for an existing superuser and:
-- If no superuser exists: You'll be prompted to create one
-- If superuser already exists: Creation will be skipped
-
-To create additional superusers later, if needed:
-```bash
-docker-compose exec backend python manage.py createsuperuser
+3. Default Admin Credentials:
+The application automatically creates a default admin user with the following credentials:
 ```
+Email: admin@test.com
+Password: admin123
+```
+You can use these credentials to log in to the admin interface at https://localhost:8000/admin
+
+
 
 The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
+- Frontend: https://localhost:3000
+- Backend API: https://localhost:8000
+- Admin Interface: https://localhost:8000/admin
 
 ## Environment Variables
 

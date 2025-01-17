@@ -9,17 +9,14 @@ python manage.py shell << EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(is_superuser=True).exists():
-    print("No superuser found.")
-    exit(1)
+    User.objects.create_superuser(
+        email='admin@test.com',
+        password='admin123'
+    )
+    print("Default Admin created successfully.")
 else:
-    print("Superuser already exists.")
-    exit(0)
+    print("Default Admin already exists.")
 EOF
-
-if [ $? -eq 1 ]; then
-    echo "Creating superuser through interactive prompt..."
-    python manage.py createsuperuser
-fi
 
 # Start server with SSL
 exec python manage.py runsslserver \
