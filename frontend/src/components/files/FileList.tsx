@@ -176,8 +176,8 @@ export const FileList = ({ files: propFiles, showUploadButton = true }: FileList
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Files</h2>
         {showUploadButton && (
           <Button asChild>

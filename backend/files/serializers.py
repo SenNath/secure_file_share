@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import File, FileVersion, FileChunk
 from django.contrib.auth import get_user_model
+from authentication.serializers import UserSerializer
 
 User = get_user_model()
 
@@ -11,11 +12,6 @@ def format_file_size(size_in_bytes):
             return f"{size_in_bytes:.2f} {unit}"
         size_in_bytes /= 1024.0
     return f"{size_in_bytes:.2f} PB"
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email']
 
 class FileChunkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,9 +84,11 @@ class FileSerializer(serializers.ModelSerializer):
 
 class FileListSerializer(FileSerializer):
     """Simplified serializer for list views"""
+    owner = UserSerializer(read_only=True)
+    
     class Meta(FileSerializer.Meta):
         fields = [
-            'id', 'name', 'mime_type', 'size',
+            'id', 'name', 'mime_type', 'size', 'owner',
             'formatted_size', 'status', 'upload_completed_at',
             'last_accessed_at', 'is_deleted'
         ] 

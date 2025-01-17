@@ -4,7 +4,7 @@ from .views import (
     EnableMFAView, DisableMFAView, VerifyMFAView,
     SendVerificationEmailView, VerifyEmailView,
     UserLoginView, UserRegistrationView, UserProfileView,
-    UserLogoutView
+    UserLogoutView, UserListView, UserDetailView
 )
 
 urlpatterns = [
@@ -18,4 +18,7 @@ urlpatterns = [
     path('email/verify/', VerifyEmailView.as_view(), name='verify-email'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('logout/', UserLogoutView.as_view(), name='logout'),
+    # User Management endpoints
+    path('users/', UserListView.as_view(), name='user-list'),
+    path('users/<uuid:id>/', UserDetailView.as_view(), name='user-detail'),
 ] 

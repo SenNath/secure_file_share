@@ -2,6 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Admin Routes
+    path('admin/list/', views.AdminFileListView.as_view(), name='admin-file-list'),
+    
     # File Management
     path('', views.FileListCreateView.as_view(), name='file-list'),
     path('<uuid:pk>/', views.FileDetailView.as_view(), name='file-detail'),

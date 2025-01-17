@@ -17,9 +17,20 @@ import logging
 from .auth import get_tokens_for_user, refresh_access_token
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from functools import wraps
 
 User = get_user_model()
 logger = logging.getLogger('secure_file_share')
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(view_instance, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not request.user.role or request.user.role.name != 'ADMIN':
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        return view_func(view_instance, request, *args, **kwargs)
+    return _wrapped_view
 
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -267,11 +278,11 @@ class UserListView(generics.ListAPIView):
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated]
     
+    @admin_required
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
     def get_queryset(self):
-        user = self.request.user
-        if not user.has_permission('manage_users'):
-            return User.objects.none()
-        
         queryset = User.objects.all().select_related('role')
         
         # Filter by role
@@ -301,14 +312,23 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     lookup_field = 'id'
     
+    @admin_required
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+    
+    @admin_required
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
+    
+    @admin_required
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+    
     def get_queryset(self):
-        user = self.request.user
-        if not user.has_permission('manage_users'):
-            return User.objects.none()
         return User.objects.all().select_related('role')
         
     def update(self, request, *args, **kwargs):
-        if request.user.id == kwargs.get('id'):
+        if str(request.user.id) == str(kwargs.get('id')):
             return Response(
                 {"error": "Cannot modify your own user through admin interface"},
                 status=status.HTTP_400_BAD_REQUEST

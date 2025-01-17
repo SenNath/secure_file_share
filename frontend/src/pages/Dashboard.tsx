@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { FileList } from "@/components/files/FileList";
 import { FileUpload } from "@/components/files/FileUpload";
-import { FileRecent } from "@/components/files/FileRecent";
 import { FileShared } from "@/components/files/FileShared";
 import { FileTrash } from "@/components/files/FileTrash";
 
@@ -16,7 +15,6 @@ const Dashboard = () => {
       <Routes>
         <Route path="/" element={<FileList />} />
         <Route path="/upload" element={<FileUpload />} />
-        <Route path="/recent" element={<FileRecent />} />
         <Route path="/shared" element={<FileShared />} />
         <Route path="/trash" element={<FileTrash />} />
       </Routes>
