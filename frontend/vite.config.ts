@@ -10,8 +10,8 @@ export default defineConfig({
   server: {
     port: 3000,
     https: {
-      key: fs.readFileSync("../certificates/server.key"),
-      cert: fs.readFileSync("../certificates/server.crt")
+      key: fs.readFileSync("../backend/certificates/server.key"),
+      cert: fs.readFileSync("../backend/certificates/server.crt")
     } as ServerOptions['https'],
     proxy: {
       '/api': {
