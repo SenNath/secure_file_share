@@ -54,7 +54,7 @@ services:
     volumes:
       - ./backend:/backend
       - ./certificates:/certificates
-      - sqlite_data:/backend
+      - sqlite_data:/backend/db
     stdin_open: true
     tty: true
     depends_on:
@@ -81,7 +81,7 @@ services:
     volumes:
       - ./backend:/backend
       - ./certificates:/certificates
-      - sqlite_data:/backend
+      - sqlite_data:/backend/db
     depends_on:
       - redis
       - backend
