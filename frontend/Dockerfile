@@ -11,6 +11,13 @@ RUN npm install
 # Copy project files
 COPY . .
 
+# Debug: Check if certificates exist
+RUN echo "Checking certificate directory:" && \
+    ls -la /certificates || echo "Certificates directory not found" && \
+    echo "Current directory:" && \
+    pwd && \
+    ls -la
+
 # Build the app
 RUN npm run build
 
