@@ -6,18 +6,24 @@ import type { ServerOptions } from 'vite';
 
 // Function to safely load SSL certificates
 const loadSSLCertificates = () => {
-  console.log('Current working directory:', process.cwd());
-  console.log('Checking for certificates in /certificates/');
+  const currentDir = process.cwd();
+  console.log('Current working directory:', currentDir);
+
+  // Check if running locally
+  const isLocalDev = currentDir.includes('/secure_file_share/frontend');
+  const certPath = isLocalDev ? '../backend/certificates' : '/certificates';
+  
+  console.log(`Checking for certificates in: ${certPath}`);
   
   try {
-    if (fs.existsSync('/certificates/server.key') && fs.existsSync('/certificates/server.crt')) {
-      console.log('Found SSL certificates in /certificates/');
+    if (fs.existsSync(`${certPath}/server.key`) && fs.existsSync(`${certPath}/server.crt`)) {
+      console.log('Found SSL certificates!');
       return {
-        key: fs.readFileSync('/certificates/server.key'),
-        cert: fs.readFileSync('/certificates/server.crt')
+        key: fs.readFileSync(`${certPath}/server.key`),
+        cert: fs.readFileSync(`${certPath}/server.crt`)
       } as ServerOptions['https'];
     }
-    console.log('Certificates not found in /certificates/');
+    console.log('Certificates not found');
     return undefined;
   } catch (error) {
     console.log('Error loading certificates:', error);

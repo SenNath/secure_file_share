@@ -16,7 +16,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_URL=https://localhost:8000
+      - VITE_API_URL=https://localhost:3000
       - HTTPS=true
       - SSL_CRT_FILE=/certificates/server.crt
       - SSL_KEY_FILE=/certificates/server.key
