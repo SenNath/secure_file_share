@@ -61,7 +61,9 @@ Note: When you register as a new user from the frontend, the role will be set to
 The application will be available at:
 - Frontend: https://localhost:3000
 - Backend API: https://localhost:8000
-- Admin Interface: https://localhost:8000/admin
+
+
+**Note**: Since the application uses self-signed certificates for development, your browser will show a security warning. This is expected - click "Advanced" and "Proceed" (Chrome) or "Accept the Risk and Continue" (Firefox) to access the application. This warning appears because we're using self-signed certificates for development; in production, you would use proper SSL certificates.
 
 ## Environment Variables
 
@@ -89,11 +91,6 @@ To run the application in development mode:
 docker-compose up
 ```
 
-The application will be available at:
-- Frontend: https://localhost:3000
-- Backend API: https://localhost:8000/api
-- Admin Interface: https://localhost:8000/admin
-
 ##Security
 
 ### Security Features
@@ -110,17 +107,6 @@ The application will be available at:
 2. For production, use proper SSL certificates from a trusted certificate authority.
 3. Change all secret keys and passwords before deploying to production.
 
-## Testing
-
-### Backend Tests
-```bash
-docker-compose exec backend python manage.py test
-```
-
-### Frontend Tests
-```bash
-docker-compose exec frontend npm test
-```
 
 ## Features
 - End-to-end file encryption

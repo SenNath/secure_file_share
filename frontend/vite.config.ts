@@ -32,10 +32,11 @@ export default defineConfig({
     port: 3000,
     https: loadSSLCertificates(),
     proxy: {
-      '/api': {
+      '^/api/.*': {
         target: 'https://localhost:8000',
         secure: false,
-        changeOrigin: true
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   },
