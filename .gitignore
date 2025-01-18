@@ -74,6 +74,8 @@ build/
 /chunks/
 /static/
 /logs/
+backend/media/
+backend/logs/
 /certificates/
 *.key
 *.crt
