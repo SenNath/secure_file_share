@@ -70,12 +70,15 @@ build/
 *~
 
 # Project specific
-/media/
+
 /chunks/
 /static/
-/logs/
-backend/media/
-backend/logs/
+backend/media/*
+!backend/media/.gitkeep
+backend/logs/*
+!backend/logs/.gitkeep
+media/*
+static/*
 /certificates/
 *.key
 *.crt
