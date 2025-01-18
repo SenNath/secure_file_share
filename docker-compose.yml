@@ -7,12 +7,12 @@ services:
       dockerfile: Dockerfile
     command: ./scripts/generate_cert.sh
     volumes:
-      - ./certificates:/certificates
+      - ./backend/certificates:/certificates
 
   frontend:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
@@ -29,13 +29,12 @@ services:
       - VITE_IV_LENGTH=12
       - VITE_AUTH_TOKEN_KEY=auth_token
       - VITE_REFRESH_TOKEN_KEY=refresh_token
-      - VITE_DEV_MODE=false
+      - VITE_DEV_MODE=true
       - NODE_ENV=production
     volumes:
       - ./backend/certificates:/certificates
     depends_on:
-      certificates:
-        condition: service_completed_successfully
+      - certificates
 
   backend:
     build:
@@ -53,15 +52,13 @@ services:
       - DATABASE_URL=sqlite:///backend/db.sqlite3
     volumes:
       - ./backend:/backend
-      - ./certificates:/certificates
+      - ./backend/certificates:/certificates
       - sqlite_data:/backend/db
     stdin_open: true
     tty: true
     depends_on:
-      certificates:
-        condition: service_completed_successfully
-      redis:
-        condition: service_started
+      - certificates
+      - redis
 
   redis:
     image: redis:6
@@ -82,7 +79,7 @@ services:
       - DATABASE_URL=sqlite:///backend/db.sqlite3
     volumes:
       - ./backend:/backend
-      - ./certificates:/certificates
+      - ./backend/certificates:/certificates
       - sqlite_data:/backend/db
     depends_on:
       - redis

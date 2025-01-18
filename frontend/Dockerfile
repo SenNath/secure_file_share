@@ -8,10 +8,6 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy certificates from host
-COPY ../backend/certificates/server.key /app/certificates/
-COPY ../backend/certificates/server.crt /app/certificates/
-
 # Copy project files
 COPY . .
 
@@ -22,11 +18,11 @@ RUN npm run build
 FROM node:18-alpine
 WORKDIR /
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/certificates ./certificates
+COPY --from=builder /dist ./dist
+COPY --from=builder /package*.json ./
 
 RUN npm install -g serve
 EXPOSE 3000
 
-CMD ["serve", "-s", "dist", "-l", "3000", "--ssl-cert", "./certificates/server.crt", "--ssl-key", "./certificates/server.key"] 
+# Start serve with HTTPS
+CMD ["serve", "-s", "dist", "-l", "3000", "--ssl-cert", "/certificates/server.crt", "--ssl-key", "/certificates/server.key"] 
