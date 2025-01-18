@@ -19,7 +19,6 @@ A secure file sharing application built with React and Django, featuring end-to-
 - shadcn/ui
 - Tailwind CSS
 - TypeScript
-- Web Crypto API
 
 ### Backend
 - Django
